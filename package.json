@@ -1,0 +1,27 @@
+{
+  "name": "com.all.core.ar.persistent",
+  "version": "0.0.1",
+  "displayName": "A-LL Core - Persitent AR",
+  "description": "This is the Persistent Augmented Reality core package of A-LL Creative Technology mobile Unity Framework",
+  "unity": "2019.1",
+  "keywords": [
+    "A-LL Creative Technology",
+    "Core",
+    "A-LL",
+    "AR",
+    "Persistent"
+  ],
+  "author": {
+    "name": "A-LL Creative Technology",
+    "email": "support@a-ll.tech",
+    "url": "https://a-ll.tech/"
+  },
+  "type": "library",
+  "dependencies": {
+    "com.unity.xr.arcore": "4.1.7",
+    "com.unity.xr.arfoundation": "4.1.7",
+    "com.unity.xr.arkit": "4.1.7",
+    "com.unity.xr.management": "3.2.17",
+    "com.google.ar.core.arfoundation.extensions": "1.29.0"
+  }
+}

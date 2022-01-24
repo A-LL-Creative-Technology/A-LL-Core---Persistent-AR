@@ -21,7 +21,6 @@
     "com.unity.xr.arcore": "4.1.7",
     "com.unity.xr.arfoundation": "4.1.7",
     "com.unity.xr.arkit": "4.1.7",
-    "com.unity.xr.management": "3.2.17",
-    "com.google.ar.core.arfoundation.extensions": "1.29.0"
+    "com.unity.xr.management": "3.2.17"
   }
 }

@@ -7,7 +7,9 @@ public class APIRequestsManager : MonoBehaviour
     public string apiEndpoint;
     public string apiToken; // Used as basic authentication token to add security
 
-    //public APIController apiController; // Using GetInstance() in Start() sometimes returns null. Drag and Drop in Unity causes no problem
+#if USE_ALL_CORE_UTILS
+    public APIController apiController; // Using GetInstance() in Start() sometimes returns null. Drag and Drop in Unity causes no problem
+#endif
     private Dictionary<string, string> parameters; // Contains header params
 
     // Start is called before the first frame update
@@ -26,46 +28,63 @@ public class APIRequestsManager : MonoBehaviour
     // Get the list of all maps
     public void GetAllMaps(System.Action<CloudAnchorMapCollection> callback)
     {
-        //if(apiController == null)
-        //{
-        //    Debug.Log("apiController is null");
-        //}
-        //apiController.Get<CloudAnchorMapCollection>("allMaps", parameters, (CloudAnchorMapCollection mapCollection) => {
-        //    //Debug.Log("existing maps: " + existingMaps.Collection[0].ToString());
-        //    if(mapCollection == null)
-        //    {
-        //        Debug.Log("GetAllMaps returned null");
-        //    }
-        //    else
-        //    {
-        //        Debug.Log("GetAllMaps result: " + mapCollection.Collection[0].ToString());
-        //    }
-            
-        //    callback?.Invoke(mapCollection);
-        //}, null, null, null, false);
+#if USE_ALL_CORE_UTILS
+        if(apiController == null)
+        {
+            Debug.Log("apiController is null");
+        }
+        apiController.Get<CloudAnchorMapCollection>("allMaps", parameters, (CloudAnchorMapCollection mapCollection) =>
+        {
+            //Debug.Log("existing maps: " + existingMaps.Collection[0].ToString());
+            if (mapCollection == null)
+            {
+                Debug.Log("GetAllMaps returned null");
+            }
+            else
+            {
+                Debug.Log("GetAllMaps result: " + mapCollection.Collection[0].ToString());
+            }
+
+            callback?.Invoke(mapCollection);
+        }, null, null, null, false);
+#else
+        Debug.LogError("APIController missing, please install A-LL Core Utils to use this functionnality !");
+#endif
     }
 
     public void CreateMap(CloudAnchorMap map, System.Action callback)
     {
-        //apiController.Post<CloudAnchorMap, string>(map, "createMap", parameters, (string successMessage) =>
-        //{
-        //    callback?.Invoke();
-        //}, null, null, null, false);
+#if USE_ALL_CORE_UTILS
+        apiController.Post<CloudAnchorMap, string>(map, "createMap", parameters, (string successMessage) =>
+        {
+            callback?.Invoke();
+        }, null, null, null, false);
+#else
+        Debug.LogError("APIController missing, please install A-LL Core Utils to use this functionnality !");
+#endif
     }
 
     public void EditMap(CloudAnchorMap map, System.Action callback)
     {
-        //apiController.Post<CloudAnchorMap, string>(map, "editMap", parameters, (string successMessage) =>
-        //{
-        //    callback?.Invoke();
-        //}, null, null, null, false);
+#if USE_ALL_CORE_UTILS
+        apiController.Post<CloudAnchorMap, string>(map, "editMap", parameters, (string successMessage) =>
+        {
+            callback?.Invoke();
+        }, null, null, null, false);
+#else
+        Debug.LogError("APIController missing, please install A-LL Core Utils to use this functionnality !");
+#endif
     }
 
     public void EditARObjects(CloudAnchorMap map, System.Action callback)
     {
-        //apiController.Post<CloudAnchorMap, string>(map, "editArObjects", parameters, (string successMessage) =>
-        //{
-        //    callback?.Invoke();
-        //}, null, null, null, false);
+#if USE_ALL_CORE_UTILS
+        apiController.Post<CloudAnchorMap, string>(map, "editArObjects", parameters, (string successMessage) =>
+        {
+            callback?.Invoke();
+        }, null, null, null, false);
+#else
+        Debug.LogError("APIController missing, please install A-LL Core Utils to use this functionnality !");
+#endif
     }
 }

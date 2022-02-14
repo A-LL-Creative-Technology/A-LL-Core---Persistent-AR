@@ -128,9 +128,6 @@ public class MainMenuManager : MonoBehaviour
         {
             Controller.ForceStop();
         }
-
-        editMapButton.interactable = false;
-        aRManagerButton.interactable = false;
         //beaconController.StopScanning();
 
         Controller.Reset(true);
@@ -138,8 +135,6 @@ public class MainMenuManager : MonoBehaviour
         arCursor.Reset();
 
         // Reload dropdown values from DB
-        OnDisable();
-        OnEnable();
 
         //canvasManager.showCanvasMainMenu();
     }

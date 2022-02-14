@@ -10,18 +10,11 @@ using UnityEngine.UI;
 public class MainMenuManager : MonoBehaviour
 {
 
-    public TMP_Dropdown dropdown; // Dropdown listing all existing Maps
+    //public TMP_Dropdown dropdown; // Dropdown listing all existing Maps
+    [Header("Persistant AR Controllers")]
     public CloudAnchorController Controller;
     public MapObjectsManager mapObjectsManager;
-    //public CanvasManager canvasManager;
     public ARCursor arCursor;
-
-    //public BeaconController beaconController;
-
-    public Button editMapButton; // "Edit Map" button. Will be disabled when no map is selected
-    public Button aRManagerButton; // "AR Manager" button. Will be disabled when no map is selected
-
-    private CloudAnchorMapCollection mapCollection = new CloudAnchorMapCollection();
 
     // Start is called before the first frame update
     void Start()
@@ -35,73 +28,17 @@ public class MainMenuManager : MonoBehaviour
         
     }
 
-    // Called when dropdown selection change
-    public void OnResolvingSelectionChanged()
+    public void FetchMaps(Action<CloudAnchorMapCollection> callback)
     {
-        // A map has been selected, the two buttons become available
-        editMapButton.interactable = true;
-        aRManagerButton.interactable = true;
-    }
-
-    public void OnEnable()
-    {
-        Debug.Log("MainMenuManager enabled");
-
-        // Inform the user that the maps are loading
-        var options = new List<TMP_Dropdown.OptionData>();
-        options.Add(new TMP_Dropdown.OptionData("Loading maps..."));
-        dropdown.options = options;
-
         // Ask the server for the maps stored
         Controller.FetchCloudAnchorMapCollection((CloudAnchorMapCollection map) =>
-            {
-                Debug.Log("OnEnable (MainMenuManager) callback returned");
-                mapCollection = map;
-
-                Debug.Log(JsonUtility.ToJson(mapCollection));
-
-                var options = new List<TMP_Dropdown.OptionData>();
-
-                if (mapCollection.Collection.Count > 0)
-                {
-                    // At least 1 map exists
-
-                    dropdown.onValueChanged.AddListener(delegate
-                    {
-                        OnResolvingSelectionChanged();
-                    });
-
-                    foreach (var data in mapCollection.Collection)
-                    {
-                        //List maps in dropdown
-                        options.Add(new TMP_Dropdown.OptionData(
-                            data.name));
-                    }
-                }
-                else
-                {
-                    // No map exists
-
-                    options.Add(new TMP_Dropdown.OptionData("No map found"));
-                }
-
-                dropdown.options = options;
-            });
-    }
-
-    public void OnDisable()
-    {
-        dropdown.onValueChanged.RemoveListener(delegate
         {
-            OnResolvingSelectionChanged();
+            callback.Invoke(map);
         });
-
-        dropdown.ClearOptions();
-        mapCollection.Collection.Clear();
     }
 
     // Load the map without the AR objects (used for anchors editing)
-    public void LoadMap()
+    public void LoadMap(string mapName)
     {
         //arCursor.ResetARSession();
 
@@ -109,18 +46,15 @@ public class MainMenuManager : MonoBehaviour
 
         Controller.SetApplicationMode(CloudAnchorController.ApplicationMode.Resolving);
 
-        Debug.Log("dropdown.value = " + dropdown.value + ", mapCollectionSize = " + mapCollection.Collection.Count);
-        Controller.LoadMap(mapCollection.Collection[dropdown.value].name);
+        Controller.LoadMap(mapName);
         Controller.SetEditingMap(true);
 
         arCursor.SwitchRaycastingModeToAnchorsAndSurfaces();
         arCursor.SetUseCursor(true);
-
-        //canvasManager.showPanelMapEditor();
     }
 
     // Load the map with the AR objects (used for AR objects editing)
-    public void LoadObjectsWithAnchors()
+    public void LoadObjectsWithAnchors(string mapName)
     {
         //arCursor.ResetARSession();
 
@@ -129,14 +63,13 @@ public class MainMenuManager : MonoBehaviour
         Controller.SetLoadObjectsWithAnchors(true);
 
         Controller.SetApplicationMode(CloudAnchorController.ApplicationMode.Resolving);
-        Debug.Log("dropdown.value = " + dropdown.value + ", mapCollectionSize = " + mapCollection.Collection.Count);
-        Controller.LoadMap(mapCollection.Collection[dropdown.value].name);
+
+        Controller.LoadMap(mapName);
         Controller.SetEditingMap(true);
 
         arCursor.SwitchRaycastingModeToObjects();
         arCursor.SetUseCursor(false);
 
-        //canvasManager.showPanelSceneManager();
     }
 
     // When we want to reset the AR Session, he shall wait for the session to be initialised again...
@@ -154,7 +87,6 @@ public class MainMenuManager : MonoBehaviour
         arCursor.SwitchRaycastingModeToObjects();
         arCursor.SetUseCursor(false);
 
-        canvasManager.showPanelSceneManager();
     }*/
 
     // Setup the modules to create a new Map
@@ -170,7 +102,6 @@ public class MainMenuManager : MonoBehaviour
         arCursor.SwitchRaycastingModeToAnchorsAndSurfaces();
         arCursor.SetUseCursor(true);
 
-        //canvasManager.showPanelMapEditor();
     }
 
     // Load the map for the client experience using Bluetooth Beacons
@@ -188,10 +119,6 @@ public class MainMenuManager : MonoBehaviour
 
         arCursor.SwitchRaycastingModeToAnchorsAndSurfaces();
         arCursor.SetUseCursor(false);
-
-        //beaconController.StartScanning();
-
-        //canvasManager.showPanelClientApp();
     }
 
     // Called by back buttons on the different menus to go back to main menu

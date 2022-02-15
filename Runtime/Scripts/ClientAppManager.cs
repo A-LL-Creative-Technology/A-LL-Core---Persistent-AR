@@ -5,7 +5,7 @@ using TMPro;
 
 public class ClientAppManager : MonoBehaviour
 {
-    public TextMeshProUGUI beaconNameDisplayTMP; // UI that display the beacons info (closest beacon)
+    //public TextMeshProUGUI beaconNameDisplayTMP; // UI that display the beacons info (closest beacon)
 
     private CloudAnchorController cloudAnchorController;
     private string closestBeaconName;
@@ -46,6 +46,6 @@ public class ClientAppManager : MonoBehaviour
     private void OnClosestBeaconChanged(string beaconName)
     {
         closestBeaconName = beaconName;
-        beaconNameDisplayTMP.text = "Closest beacon is: " + beaconName;
+        //beaconNameDisplayTMP.text = "Closest beacon is: " + beaconName;
     }
 }

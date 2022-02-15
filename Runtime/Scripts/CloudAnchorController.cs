@@ -17,19 +17,19 @@ public class CloudAnchorController : MonoBehaviour
     public ARAnchorManager anchorManager;
     public ARSessionOrigin sessionOrigin;
     public GameObject anchorMarkerObject; // 3D object used to see where the anchors are
-    public TextMeshProUGUI debugText;
+    //public TextMeshProUGUI debugText;
     public GameObject MapQualityIndicatorPrefab;
-    public TMP_InputField mapNameInput; // Map Editor Input
-    public TextMeshProUGUI mapNameSaveDisplay; // Name diplayed in Saved popup
+    //public TMP_InputField mapNameInput; // Map Editor Input
+    //public TextMeshProUGUI mapNameSaveDisplay; // Name diplayed in Saved popup
 
     public MapObjectsManager mapObjectsManager;
 
     public GameObject localAnchorPrefab;
 
-    public Slider rotationSlider;
-    public TMP_InputField rotationInputField;
+    //public Slider rotationSlider;
+    //public TMP_InputField rotationInputField;
 
-    public TMP_InputField anchorNameInputField;
+    //public TMP_InputField anchorNameInputField;
 
     // Closest plane detection
     public ARRaycastManager raycastManager; // Raycast manager from AR Session Origin used to raycast on AR trackables
@@ -261,13 +261,13 @@ public class CloudAnchorController : MonoBehaviour
 
         anchorNameOrRotationChanged = false;
 
-        mapNameInput.text = "";
+        //mapNameInput.text = "";
 
         previousRotationValue = 0f;
-        rotationSlider.value = 0f;
-        rotationInputField.text = "0";
+        //rotationSlider.value = 0f;
+        //rotationInputField.text = "0";
 
-        anchorNameInputField.text = "";
+        //anchorNameInputField.text = "";
 
         selectedAnchorMarker = null;
 
@@ -289,7 +289,8 @@ public class CloudAnchorController : MonoBehaviour
         // At least 1 anchor
         if(arAnchorsList.Count > 0)
         {
-            debugText.text = arAnchorsList[0].transform.position.ToString();
+            //debugText.text = arAnchorsList[0].transform.position.ToString();
+            Debug.Log(arAnchorsList[0].transform.position.ToString());
         }
     }
 
@@ -387,7 +388,7 @@ public class CloudAnchorController : MonoBehaviour
                 currentMap = existingMaps.Collection.Find(x => x.name == mapToLoadName);
 
                 // Set name in textfield
-                mapNameInput.text = currentMap.name;
+                //mapNameInput.text = currentMap.name;
 
                 foreach (var anchor in currentMap.anchors)
                 {
@@ -412,7 +413,7 @@ public class CloudAnchorController : MonoBehaviour
             currentMap = existingMaps.Collection.Find(x => x.name == mapToLoadName);
 
             // Set name in textfield
-            mapNameInput.text = currentMap.name;
+            //mapNameInput.text = currentMap.name;
 
             foreach (var anchor in currentMap.anchors)
             {
@@ -441,19 +442,19 @@ public class CloudAnchorController : MonoBehaviour
         LoadMap(crtMapName);
     }
 
-    public void SaveMap()
+    public void SaveMap(string mapName)
     {
         // Check that there is no work in progress and change application mode
         if (!SetApplicationMode(ApplicationMode.Hosting))
         {
-            debugText.text = "Can't save, hosting / resolving in progress";
+            Debug.Log("Can't save, hosting / resolving in progress");
             return;
         }
 
         // If name textfield is empty
-        if(mapNameInput.text == "")
+        if(string.IsNullOrEmpty(mapName))
         {
-            debugText.text = "Name empty";
+            Debug.LogError("Name empty");
             SendEmptyMapNameEvent();
             return;
         }
@@ -473,37 +474,37 @@ public class CloudAnchorController : MonoBehaviour
                     existingMaps = map;
                 }
 
-                SaveMapRemaining();
+                SaveMapRemaining(mapName);
             });
         }
         else
         {
-            SaveMapRemaining();
+            SaveMapRemaining(mapName);
         }
     }
 
-    private void SaveMapRemaining()
+    private void SaveMapRemaining(string mapName)
     {
         if (editingMap)
         {
             // Another map already has the same name than the one your are editing
             foreach (CloudAnchorMap map in existingMaps.Collection)
             {
-                if (map.name == mapNameInput.text && map != currentMap) // TODO comparer statamic id? anciennement: !map.Equals(currentMap)
+                if (map.name.Equals(mapName) && map != currentMap) // TODO comparer statamic id? anciennement: !map.Equals(currentMap)
                 {
                     // Name exists in DB and isn't current map
                     SendMapNameTakenEvent();
-                    debugText.text = "Name taken";
+                    Debug.LogError("Name taken");
                     return;
                 }
             }
 
             // Edit name
-            if (currentMap.name != mapNameInput.text)
+            if (!currentMap.name.Equals(mapName))
             {
                 saveInProgress = true; // The name changed, we need to save
             }
-            currentMap.name = mapNameInput.text;
+            currentMap.name = mapName;
 
             if (anchorNameOrRotationChanged)
             {
@@ -529,20 +530,18 @@ public class CloudAnchorController : MonoBehaviour
                 mapNames.Add(map.name);
             }
 
-            if (mapNames.Contains(mapNameInput.text) || mapNameInput.text == "")
+            if (mapNames.Contains(mapName) || string.IsNullOrEmpty(mapName))
             {
                 // Prepare currentMap in case we want to replace (unused)
-                currentMap = existingMaps.Collection.Find(x => x.name == mapNameInput.text);
+                currentMap = existingMaps.Collection.Find(x => x.name == mapName);
 
                 SendMapNameTakenEvent(); //Event name taken (should display popup name taken)
                 return;
             }
             else
             {
-                debugText.text = "false";
-
                 // Create empty map with name given
-                currentMap = new CloudAnchorMap(mapNameInput.text);
+                currentMap = new CloudAnchorMap(mapName);
             }
         }
 
@@ -564,7 +563,6 @@ public class CloudAnchorController : MonoBehaviour
             if (cloudAnchor == null)
             {
                 Debug.LogFormat("Failed to create a Cloud Anchor.");
-                debugText.text = "Failed to create a Cloud Anchor.";
                 // TODO: show error message, hide "saving" overlay
             }
             else
@@ -579,12 +577,11 @@ public class CloudAnchorController : MonoBehaviour
         // If nothing changed, nothing to save
         if (!saveInProgress)
         {
-            debugText.text = "No change to save";
+            Debug.Log("No change to save");
         }
         else
         {
             // Display saving infos
-            debugText.text = "Saving...";
             SendSavingMapEvent();
         }
     }
@@ -627,18 +624,21 @@ public class CloudAnchorController : MonoBehaviour
         }
 
         previousRotationValue = value;
-        rotationInputField.text = "" + value;
+        //rotationInputField.text = "" + value;
+        //TODO Send event rotation changed
     }
 
     public void UpdateRotationInput(string value)
     {
         if(float.Parse(value) < 0)
         {
-            rotationInputField.text = "0";
+            //rotationInputField.text = "0";
+            //TODO Send event update rotation
         }
         else if (float.Parse(value) > 360)
         {
-            rotationInputField.text = "360";
+            //rotationInputField.text = "360";
+            //TODO Send event update rotation
         }
 
         if (selectedAnchorMarker != null)
@@ -649,7 +649,8 @@ public class CloudAnchorController : MonoBehaviour
         }
 
         previousRotationValue = float.Parse(value);
-        rotationSlider.value = float.Parse(value);
+        //rotationSlider.value = float.Parse(value);
+        //TODO Send event update rotation
     }
 
     public void UpdateSelectedAnchor(GameObject anchorMarker)
@@ -661,10 +662,12 @@ public class CloudAnchorController : MonoBehaviour
         float updatedRotation = anchorMarker.transform.localRotation.eulerAngles.y;
 
         previousRotationValue = updatedRotation;
-        rotationSlider.value = updatedRotation;
-        rotationInputField.text = "" + updatedRotation;
+        //rotationSlider.value = updatedRotation;
+        //TODO Send Event update rotation
+        //rotationInputField.text = "" + updatedRotation;
 
-        anchorNameInputField.text = anchorMarkerToAnchorName[anchorMarker];
+        //anchorNameInputField.text = anchorMarkerToAnchorName[anchorMarker];
+        //TODO Anchor name changed
     }
 
     public void PlaceCloudAnchor(ARPlane hitPlane, Pose hitPose)
@@ -746,20 +749,20 @@ public class CloudAnchorController : MonoBehaviour
     // Display the list of cloud anchors on the current map (used for debug only)
     public void ListCloudAnchors()
     {
-        if (debugText != null)
-        {
-            var textList = "";
-            foreach (var anchor in arAnchorsList)
-            {
-                textList += anchor.gameObject.name + "\n ";
-            }
+        //if (debugText != null)
+        //{
+        //    var textList = "";
+        //    foreach (var anchor in arAnchorsList)
+        //    {
+        //        textList += anchor.gameObject.name + "\n ";
+        //    }
 
-            foreach (var anchor in arAnchorsHosted)
-            {
-                textList += anchor.gameObject.name + "\n ";
-            }
-            debugText.text = textList;
-        }
+        //    foreach (var anchor in arAnchorsHosted)
+        //    {
+        //        textList += anchor.gameObject.name + "\n ";
+        //    }
+        //    debugText.text = textList;
+        //}
 
         // AR Session State
         //Debug.Log("AR session state: " + ARSession.state.ToString());
@@ -1040,7 +1043,7 @@ public class CloudAnchorController : MonoBehaviour
             if(timer > timeoutDuration)
             {
                 Debug.Log("Timeout! Pending anchors destroyed: " + pendingCloudAnchors.Count);
-                debugText.text = "Pending anchors timeout";
+                //debugText.text = "Pending anchors timeout";
                 foreach (ARCloudAnchor cloudAnchor in pendingCloudAnchors)
                 {
                     Destroy(cloudAnchor.gameObject);
@@ -1063,11 +1066,11 @@ public class CloudAnchorController : MonoBehaviour
             SaveCloudAnchorMapCollection(currentMap, () =>
             {
                 SendMapSavedEvent();
-                mapNameSaveDisplay.text = mapNameInput.text;
+                //mapNameSaveDisplay.text = mapNameInput.text;
 
                 Debug.Log(currentMap.ToString() + ", number of anchors = " + currentMap.anchors.Count);
 
-                debugText.text = "UpdateAnchorsHostingFinished";
+                //debugText.text = "UpdateAnchorsHostingFinished";
                 
                 anchorNameOrRotationChanged = false;
 
@@ -1167,7 +1170,7 @@ public class CloudAnchorController : MonoBehaviour
                 if (timer > timeoutDuration)
                 {
                     Debug.Log("Timeout! Stabilising anchors destroyed: " + stabilisingCloudAnchors.Count);
-                    debugText.text = "Stabilising anchors timeout";
+                    //debugText.text = "Stabilising anchors timeout";
                     foreach (ARCloudAnchor cloudAnchor in stabilisingCloudAnchors)
                     {
                         Destroy(cloudAnchor.gameObject);

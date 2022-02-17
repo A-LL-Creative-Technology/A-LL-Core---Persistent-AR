@@ -10,7 +10,7 @@ public class MapObjectsManager : MonoBehaviour
     //public TextMeshProUGUI infoText;
     //public TMP_Dropdown dropdown; // Dropdown of all available AR objects that can be placed
     //public TextMeshProUGUI dropdownPlaceholder;
-    public CloudAnchorController controller; // used to save map objects
+    public CloudAnchorController cloudAnchorController; // used to save map objects
 
     //public Slider rotationSlider;
     //public TMP_InputField rotationInputField;
@@ -217,7 +217,7 @@ public class MapObjectsManager : MonoBehaviour
 
     public void SaveScene()
     {
-        controller.SaveCloudAnchorMapWithObjectsCollection(dictAnchorGameObjectList);
+        cloudAnchorController.SaveCloudAnchorMapWithObjectsCollection(dictAnchorGameObjectList);
     }
 
 

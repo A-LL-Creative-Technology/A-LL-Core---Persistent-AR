@@ -46,6 +46,8 @@ public class CloudAnchorController : MonoBehaviour
 
     public bool AttachAnchorToPlane = true;
 
+    public int AnchorLifespan = 1;
+
     // The current application mode.
     [HideInInspector]
     public ApplicationMode mode;
@@ -94,7 +96,7 @@ public class CloudAnchorController : MonoBehaviour
 
     // Used because we don't have the cloud anchor id before cloud anchor has finished hosting
     // Will be used to add hosted anchors to anchorMarkerCloudId in order to be able to delete them right after hosting them
-    Dictionary<ARCloudAnchor, GameObject> cloudAnchorToAnchorMarker; 
+    Dictionary<ARCloudAnchor, GameObject> cloudAnchorToAnchorMarker;
 
 
     public enum ApplicationMode
@@ -192,7 +194,7 @@ public class CloudAnchorController : MonoBehaviour
 
     void Awake()
     {
-        
+
     }
 
     // Start is called before the first frame update
@@ -217,7 +219,7 @@ public class CloudAnchorController : MonoBehaviour
 
     private void LateUpdate()
     {
-        if(hasTimedOut)
+        if (hasTimedOut)
         {
             SendTimeOutEvent();
             hasTimedOut = false;
@@ -226,11 +228,11 @@ public class CloudAnchorController : MonoBehaviour
 
     public void Reset(bool trueReset)
     {
-        if(trueReset)
+        if (trueReset)
         {
             RemoveAllCloudAnchors();
             StopCoroutine("UpdateStabilisingCloudAnchors");
-        }    
+        }
 
         arAnchorsList = new List<ARAnchor>();
         pendingCloudAnchors = new List<ARCloudAnchor>();
@@ -345,7 +347,7 @@ public class CloudAnchorController : MonoBehaviour
 
     public bool SetApplicationMode(ApplicationMode mode)
     {
-        if(!WorkInProgress())
+        if (!WorkInProgress())
         {
             Debug.Log("Change mode to " + mode);
             this.mode = mode;
@@ -377,7 +379,7 @@ public class CloudAnchorController : MonoBehaviour
 
         Debug.Log("LoadMap called with: " + mapToLoadName);
 
-        if(existingMaps == null)
+        if (existingMaps == null)
         {
             // Reload from API (Sometimes APIController is slow to init)
             FetchCloudAnchorMapCollection((CloudAnchorMapCollection map) =>
@@ -465,7 +467,7 @@ public class CloudAnchorController : MonoBehaviour
             FetchCloudAnchorMapCollection((CloudAnchorMapCollection map) =>
             {
                 Debug.Log("Reset (CloudAnchorController) callback returned");
-                if(map == null)
+                if (map == null)
                 {
                     existingMaps = new CloudAnchorMapCollection();
                 }
@@ -481,6 +483,110 @@ public class CloudAnchorController : MonoBehaviour
         {
             SaveMapRemaining(mapName);
         }
+
+        /*if(editingMap)
+        {
+            // Another map already has the same name than the one your are editing
+            foreach (CloudAnchorMap map in existingMaps.Collection)
+            {
+                if (map.name == mapNameInput.text && map != currentMap) // TODO comparer statamic id? anciennement: !map.Equals(currentMap)
+                {
+                    // Name exists in DB and isn't current map
+                    canvasManager.showCanvasSaveMenu();
+                    debugText.text = "Name taken";
+                    return;
+                }
+            }
+
+            // Edit name
+            if (currentMap.name != mapNameInput.text)
+            {
+                saveInProgress = true; // The name changed, we need to save
+            }
+            currentMap.name = mapNameInput.text;
+
+            if (anchorNameOrRotationChanged)
+            {
+                saveInProgress = true; // At least 1 anchor name changed, we need to save
+                Debug.Log("anchor name or rotation changed, will save");
+            }
+
+            // Keep only the anchors that remain
+            var currentMapAnchorsCleaned = currentMap.anchors.FindAll(anchor => anchorMarkerCloudId.ContainsValue(anchor.id));
+            if (currentMap.anchors.Count != currentMapAnchorsCleaned.Count)
+            {
+                saveInProgress = true; // Some hosted anchors were removed, we need to save
+            }
+            currentMap.anchors = currentMapAnchorsCleaned; 
+        }
+        else
+        {
+            List<String> mapNames = new List<string>();
+
+            // Get all maps names
+            foreach (var map in existingMaps.Collection)
+            {
+                mapNames.Add(map.name);
+            }
+
+            if (mapNames.Contains(mapNameInput.text) || mapNameInput.text == "")
+            {
+                // Prepare currentMap in case we want to replace (unused)
+                currentMap = existingMaps.Collection.Find(x => x.name == mapNameInput.text);
+
+                canvasManager.showCanvasSaveMenu();
+                return;
+            }
+            else
+            {
+                debugText.text = "false";
+
+                // Create empty map with name given
+                currentMap = new CloudAnchorMap(mapNameInput.text);
+            }
+        }
+
+
+        // If all thresholds aren't reached, the map can't be saved
+        if (!AllQualityThresholdReached())
+        {
+            canvasManager.showPanelThreshold();
+            return;
+        }
+
+
+        // Host all anchors
+        foreach (var anchor in arAnchorsList)
+        {
+            // Creating a Cloud Anchor with lifetime = 1 day.
+            // This is configurable up to 365 days when keyless authentication is used.
+            ARCloudAnchor cloudAnchor = anchorManager.HostCloudAnchor(anchor, 1);
+            if (cloudAnchor == null)
+            {
+                Debug.LogFormat("Failed to create a Cloud Anchor.");
+                debugText.text = "Failed to create a Cloud Anchor.";
+                // TODO: show error message, hide "saving" overlay
+            }
+            else
+            {
+                cloudAnchorToAnchorMarker.Add(cloudAnchor,anchor.GetComponentInChildren<Marker>().gameObject);
+
+                pendingCloudAnchors.Add(cloudAnchor);
+                saveInProgress = true;
+            }
+        }
+
+        // If nothing changed, nothing to save
+        if(!saveInProgress)
+        {
+            debugText.text = "No change to save";
+        }
+        else
+        {
+            // Display saving infos
+            debugText.text = "Saving...";
+            canvasManager.showPanelSaving();
+        }*/
     }
 
     private void SaveMapRemaining(string mapName)
@@ -559,7 +665,7 @@ public class CloudAnchorController : MonoBehaviour
         {
             // Creating a Cloud Anchor with lifetime = 1 day.
             // This is configurable up to 365 days when keyless authentication is used.
-            ARCloudAnchor cloudAnchor = anchorManager.HostCloudAnchor(anchor, 1);
+            ARCloudAnchor cloudAnchor = anchorManager.HostCloudAnchor(anchor, AnchorLifespan);
             if (cloudAnchor == null)
             {
                 Debug.LogFormat("Failed to create a Cloud Anchor.");
@@ -594,9 +700,9 @@ public class CloudAnchorController : MonoBehaviour
 
     public void UpdateAnchorName(string name)
     {
-        if(selectedAnchorMarker != null)
+        if (selectedAnchorMarker != null)
         {
-            if(anchorMarkerToAnchorName.ContainsKey(selectedAnchorMarker))
+            if (anchorMarkerToAnchorName.ContainsKey(selectedAnchorMarker))
             {
                 // Update name
                 anchorMarkerToAnchorName[selectedAnchorMarker] = name;
@@ -823,10 +929,10 @@ public class CloudAnchorController : MonoBehaviour
     public void SaveCloudAnchorMapCollection(CloudAnchorMap data, System.Action callback) //TODO: make method private? TODO2 remove argument?
     {
         // Update anchors name with dictionary in currentMap
-        foreach(GameObject anchorMarker in anchorMarkerCloudId.Keys)
+        foreach (GameObject anchorMarker in anchorMarkerCloudId.Keys)
         {
             CloudAnchorItem correspondingItem = currentMap.anchors.Find(x => x.id == anchorMarkerCloudId[anchorMarker]);
-            Debug.Log("Updating '" + correspondingItem.name + "' with '" + anchorMarkerToAnchorName[anchorMarker] +"'");
+            Debug.Log("Updating '" + correspondingItem.name + "' with '" + anchorMarkerToAnchorName[anchorMarker] + "'");
             correspondingItem.name = anchorMarkerToAnchorName[anchorMarker];
 
             Quaternion rot = anchorMarker.transform.localRotation;
@@ -834,7 +940,7 @@ public class CloudAnchorController : MonoBehaviour
         }
 
         // Only for a new map in local mode
-        if(!editingMap && !onlineMode)
+        if (!editingMap && !onlineMode)
         {
             // Sort the data from latest map to oldest map for the dropdown menu
             existingMaps.Collection.Add(currentMap);
@@ -849,14 +955,14 @@ public class CloudAnchorController : MonoBehaviour
         }
 
         Debug.Log("Current map: " + currentMap.ToString());
-        if(existingMaps.Collection.Count > 0)
+        if (existingMaps.Collection.Count > 0)
         {
             Debug.Log("Previously existing maps: " + existingMaps.Collection[0].ToString());
         }
 
-        if(onlineMode)
+        if (onlineMode)
         {
-            if(editingMap)
+            if (editingMap)
             {
                 requestsManager.EditMap(currentMap, () =>
                 {
@@ -899,7 +1005,7 @@ public class CloudAnchorController : MonoBehaviour
 
             foreach (var objectToAdd in anchorMarker.Value)
             {
-                if(objectToAdd.gameObject != null)
+                if (objectToAdd.gameObject != null)
                 {
                     correspondingStoredAnchor.addObject(objectToAdd.prefabName, objectToAdd.gameObject);
                 }
@@ -972,7 +1078,7 @@ public class CloudAnchorController : MonoBehaviour
                 if (mode == ApplicationMode.Hosting)
                 {
                     //Debug.LogFormat("Succeed to host the Cloud Anchor: {0}.",
-                        //cloudAnchor.cloudAnchorId);
+                    //cloudAnchor.cloudAnchorId);
                     Debug.Log("...Succeed to host the Cloud Anchor: " + cloudAnchor.cloudAnchorId);
 
                     currentMap.addAnchor(cloudAnchor.cloudAnchorId, anchorMarkerToAnchorName[cloudAnchorToAnchorMarker[cloudAnchor]], cloudAnchorToAnchorMarker[cloudAnchor].transform.localRotation);
@@ -1012,7 +1118,7 @@ public class CloudAnchorController : MonoBehaviour
                 if (mode == ApplicationMode.Hosting)
                 {
                     //Debug.LogFormat("Failed to host the Cloud Anchor with error {0}.",
-                        //cloudAnchor.cloudAnchorState);
+                    //cloudAnchor.cloudAnchorState);
                     Debug.Log("...Failed to host the Cloud Anchor with error: " + cloudAnchor.cloudAnchorState);
                 }
                 else if (mode == ApplicationMode.Resolving)
@@ -1038,9 +1144,9 @@ public class CloudAnchorController : MonoBehaviour
         pendingCloudAnchors.RemoveAll(
             x => x.cloudAnchorState != CloudAnchorState.TaskInProgress);
 
-        if(mode == ApplicationMode.Resolving && pendingCloudAnchors.Count != 0)
+        if (mode == ApplicationMode.Resolving && pendingCloudAnchors.Count != 0)
         {
-            if(timer > timeoutDuration)
+            if (timer > timeoutDuration)
             {
                 Debug.Log("Timeout! Pending anchors destroyed: " + pendingCloudAnchors.Count);
                 //debugText.text = "Pending anchors timeout";
@@ -1105,7 +1211,7 @@ public class CloudAnchorController : MonoBehaviour
 
                     ARAnchor localAnchor = null;
 
-                    if(AttachAnchorToPlane)
+                    if (AttachAnchorToPlane)
                     {
                         // TODO test the best
                         //localAnchor = AttachAnchorToClosestPlane(localAnchorPose);
@@ -1211,11 +1317,11 @@ public class CloudAnchorController : MonoBehaviour
                 //closestPlane = plane;
 
                 // Remove candidates not in range anymore
-                candidatePlanes = candidatePlanes.Where(i => i.Value-minDist <= candidateMaxDiff)
+                candidatePlanes = candidatePlanes.Where(i => i.Value - minDist <= candidateMaxDiff)
                     .ToDictionary(i => i.Key, i => i.Value);
-                candidatePlanes.Add(plane,crtDist);
+                candidatePlanes.Add(plane, crtDist);
             }
-            else if(crtDist-minDist < candidateMaxDiff)
+            else if (crtDist - minDist < candidateMaxDiff)
             {
                 candidatePlanes.Add(plane, crtDist);
             }
@@ -1246,7 +1352,7 @@ public class CloudAnchorController : MonoBehaviour
         foreach (ARPlane plane in planeManager.trackables)
         {
             Debug.Log("Plane classification: " + plane.classification.ToString() + ", alignement: " + plane.alignment);
-            if(plane.subsumedBy != null)
+            if (plane.subsumedBy != null)
                 Debug.Log("Plane subsumedBy classification: " + plane.subsumedBy.classification + ", alignement: " + plane.subsumedBy.alignment);
 
             /*if(plane.classification == PlaneClassification.None || plane.classification == PlaneClassification.Seat)
@@ -1254,7 +1360,7 @@ public class CloudAnchorController : MonoBehaviour
                 // The plane is not interesting / unstable and is ignored
                 continue;
             }*/
-            
+
             float crtDist = Mathf.Abs(plane.infinitePlane.GetDistanceToPoint(crtPosition));
 
             if (crtDist < minDist)
@@ -1289,11 +1395,11 @@ public class CloudAnchorController : MonoBehaviour
     private void HideAnchorMarkerRender(GameObject anchorMarker)
     {
         anchorMarker.GetComponent<Renderer>().enabled = false;
-        foreach(Renderer renderer in anchorMarker.GetComponentsInChildren<Renderer>())
+        foreach (Renderer renderer in anchorMarker.GetComponentsInChildren<Renderer>())
         {
             renderer.enabled = false;
         }
-        
+
     }
 
 

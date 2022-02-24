@@ -14,6 +14,14 @@ using System.Linq;
 
 public class CloudAnchorController : MonoBehaviour
 {
+    private static CloudAnchorController instance;
+
+    public static CloudAnchorController GetInstance()
+    {
+        return instance;
+    }
+
+    public bool isClientApp;
     public ARAnchorManager anchorManager;
     public ARSessionOrigin sessionOrigin;
     public GameObject anchorMarkerObject; // 3D object used to see where the anchors are
@@ -194,7 +202,10 @@ public class CloudAnchorController : MonoBehaviour
 
     void Awake()
     {
-
+        if (instance != null && instance != this)
+            Destroy(this.gameObject);
+        else
+            instance = this;
     }
 
     // Start is called before the first frame update

@@ -93,7 +93,7 @@ public class MainMenuManager : MonoBehaviour
     public void StartNewMap()
     {
         //arCursor.ResetARSession();
-
+        Controller.isClientApp = false;
         Controller.SetLoadObjectsWithAnchors(false);
 
         Controller.SetApplicationMode(CloudAnchorController.ApplicationMode.Hosting);
@@ -108,7 +108,7 @@ public class MainMenuManager : MonoBehaviour
     public void StartClientApp()
     {
         //arCursor.ResetARSession();
-
+        Controller.isClientApp = true;
         Controller.SetLoadObjectsWithAnchors(true);
 
         // We don't want to see plane visualization in the client app

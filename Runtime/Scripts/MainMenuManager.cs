@@ -72,6 +72,15 @@ public class MainMenuManager : MonoBehaviour
 
     }
 
+    public void LoadClientApp(string mapName)
+    {
+        Controller.LoadMap(mapName);
+        Controller.SetEditingMap(false);
+
+        arCursor.SwitchRaycastingModeToObjects();
+        arCursor.SetUseCursor(false);
+    }
+
     // When we want to reset the AR Session, he shall wait for the session to be initialised again...
     /*IEnumerator WaitForSessionReset()
     {

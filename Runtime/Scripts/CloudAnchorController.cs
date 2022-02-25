@@ -291,10 +291,12 @@ public class CloudAnchorController : MonoBehaviour
         GradientColorKey endGrad = new GradientColorKey(Color.black, 1);
         grad.colorKeys = new GradientColorKey[] { startGrad, endGrad };
 
-        foreach (ARPlane plane in planeManager.trackables)
-        {
-            plane.gameObject.GetComponent<LineRenderer>().colorGradient = grad;
-        }
+
+        //TODO Those lines seem to throw an NullReference Exception. To Investigate
+        //foreach (ARPlane plane in planeManager.trackables)
+        //{
+        //    plane.gameObject.GetComponent<LineRenderer>().colorGradient = grad;
+        //}
     }
 
     private void LogFirstAnchorPosition()

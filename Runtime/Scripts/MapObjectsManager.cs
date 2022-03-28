@@ -483,7 +483,7 @@ public class MapObjectsManager : MonoBehaviour
         // If it is the first object attached to this anchor
         if (!dictAnchorGameObjectList.ContainsKey(anchorMarker))
         {
-            HapticPatterns.PlayPreset(HapticPatterns.PresetType.MediumImpact);
+            HapticPatterns.PlayPreset(HapticPatterns.PresetType.Success);
 
             dictAnchorGameObjectList.Add(anchorMarker, new List<GameObjectWithPrefabName>());
         }

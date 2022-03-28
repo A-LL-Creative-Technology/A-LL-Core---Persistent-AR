@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using Lofelt.NiceVibrations;
 
 public class MapObjectsManager : MonoBehaviour
 {
@@ -482,6 +483,7 @@ public class MapObjectsManager : MonoBehaviour
         // If it is the first object attached to this anchor
         if (!dictAnchorGameObjectList.ContainsKey(anchorMarker))
         {
+            HapticPatterns.PlayPreset(HapticPatterns.PresetType.MediumImpact);
 
             dictAnchorGameObjectList.Add(anchorMarker, new List<GameObjectWithPrefabName>());
         }

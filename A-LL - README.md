@@ -11,7 +11,7 @@ To use this package in a unity project :
     2. ARCore XR Plugin
     3. ARKit XR Plugin
     4. ARCore Extensions by following this link (https://developers.google.com/ar/develop/unity-arf/getting-started-extensions)
-        - Import samples in the description of the package
+        - Import samples in the description of the package in the Package Manager
     5. Add Nice Vibrations by Lofelt 
 4. Update project settings as follows :
     1. XR Plug-in Management

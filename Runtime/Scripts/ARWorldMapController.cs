@@ -16,66 +16,82 @@ using UnityEngine.XR.ARSubsystems;
 public class ARWorldMapController : MonoBehaviour
 {
 
-
-
-
     public ARSession arSession;
-    public TextMeshProUGUI errorText;
+    public TextMeshProUGUI infosText;
     public TextMeshProUGUI logText;
     public TextMeshProUGUI mappingStatusText;
+    public TMP_InputField inputFieldMapPrefabName;
     public Button saveButton;
     public Button loadButton;
+    public Toggle overwriteFile;
 
-    public List<string> messages;
 
-    public string path;
+    [SerializeField] private GameObject arModelToSpawn;
+
+    private List<string> logs;
+
+    private string rootPath;
+
+    private string arModelTag = "WorldMapARModel";
 
     bool supported
     {
         get
         {
-#if UNITY_IOS
             return arSession.subsystem is ARKitSessionSubsystem && ARKitSessionSubsystem.worldMapSupported;
-#else
-            return false;
-#endif
         }
     }
 
     private void Awake()
     {
-        messages = new List<string>();
-        path = Path.Combine(Application.persistentDataPath, "ARWorldMap.worldmap");
+        logs = new List<string>();
+
+        rootPath = Path.Combine(Application.persistentDataPath, "AR Worldmaps");
+        Directory.CreateDirectory(rootPath);
     }
-
-
 
     public void OnSaveButtonPressed()
     {
-#if UNITY_IOS
         StartCoroutine(Save());
-#endif
     }
-
 
     public void OnLoadButtonPressed()
     {
-#if UNITY_IOS
         StartCoroutine(Load());
-#endif
     }
 
     public void OnResetButtonPressed()
     {
-#if UNITY_IOS
         arSession.Reset();
-#endif
-    }
 
+        // remove all spawned models
+        GameObject[] worldMapObjects = GameObject.FindGameObjectsWithTag(arModelTag);
+
+        foreach (GameObject worldMapObject in worldMapObjects)
+        {
+            Destroy(worldMapObject);
+        }
+    }
 
     private IEnumerator Save()
     {
-        var sessionSubsystem = (ARKitSessionSubsystem)arSession.subsystem;
+        if (inputFieldMapPrefabName.text == "")
+        {
+            SetText(infosText, "Error: Map and Prefab filename is empty.");
+
+            yield break;
+        }
+
+        string filenameJson = "ARModels - " + inputFieldMapPrefabName.text + ".json";
+
+        if (!overwriteFile.isOn && File.Exists(Path.Combine(rootPath, filenameJson)))
+        {
+            SetText(infosText, "Error: Map and Prefab filename already exists.");
+
+            yield break;
+        }
+
+        ARKitSessionSubsystem sessionSubsystem = (ARKitSessionSubsystem)arSession.subsystem;
 
         if (sessionSubsystem == null)
         {
@@ -83,7 +99,7 @@ public class ARWorldMapController : MonoBehaviour
             yield break;
         }
 
-        var request = sessionSubsystem.GetARWorldMapAsync();
+        ARWorldMapRequest request = sessionSubsystem.GetARWorldMapAsync();
 
         while (!request.status.IsDone())
         {
@@ -96,39 +112,76 @@ public class ARWorldMapController : MonoBehaviour
             yield break;
         }
 
+        // Look for AR Models with the tag "WorldMapObject"
+        GameObject[] worldMapObjects = GameObject.FindGameObjectsWithTag(arModelTag);
 
-        GameObject[] worldMapObjects = GameObject.FindGameObjectsWithTag("WorldMapObject");
+        if (worldMapObjects.Length == 0)
+        {
+            SetText(infosText, "Error: Cannot find AR Model with tag '" + arModelTag + "'.");
+
+            yield break;
+        }
 
         List<WorldMapObject> wObjects = new List<WorldMapObject>();
         foreach (GameObject worldMapObject in worldMapObjects)
         {
             WorldMapObject savedObject = new WorldMapObject();
             savedObject.prefabName = worldMapObject.name;
-            savedObject.position = worldMapObject.transform.position;
-            savedObject.rotation = worldMapObject.transform.rotation;
-            savedObject.scale = worldMapObject.transform.localScale;
 
-            Debug.Log(savedObject.prefabName + " - " + savedObject.position + " - " + savedObject.rotation + " - " + savedObject.scale);
+            savedObject.localPositionX = worldMapObject.transform.localPosition.x;
+            savedObject.localPositionY = worldMapObject.transform.localPosition.y;
+            savedObject.localPositionZ = worldMapObject.transform.localPosition.z;
+
+            savedObject.localRotationX = worldMapObject.transform.localRotation.x;
+            savedObject.localRotationY = worldMapObject.transform.localRotation.y;
+            savedObject.localRotationZ = worldMapObject.transform.localRotation.z;
+            savedObject.localRotationW = worldMapObject.transform.localRotation.w;
+
+            savedObject.localScaleX = worldMapObject.transform.localScale.x;
+            savedObject.localScaleY = worldMapObject.transform.localScale.y;
+            savedObject.localScaleZ = worldMapObject.transform.localScale.z;
 
             wObjects.Add(savedObject);
         }
 
-        string jsonStr = JsonUtility.ToJson(wObjects);
+        string jsonStr = JsonConvert.SerializeObject(wObjects, Formatting.None, new JsonSerializerSettings()
+        {
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+        });
 
-        Debug.Log(jsonStr);
 
-        File.WriteAllText(Path.Combine(Application.persistentDataPath, "WorldMapObjectsData.json"), jsonStr);
 
-        var worldMap = request.GetWorldMap();
+        File.WriteAllText(Path.Combine(rootPath, filenameJson), jsonStr);
+
+
+        ARWorldMap worldMap = request.GetWorldMap();
         request.Dispose();
 
-        SaveAndDisposeWorldMap(worldMap);
+        // Save the Worldmap
+        Log("Serializing ARWOrldMap to byte Array");
+        var data = worldMap.Serialize(Allocator.Temp);
+
+        Log($"ARWorldMap has ${data.Length} bytes");
+
+        string filenameWorlMap = "ARWorldMap - " + inputFieldMapPrefabName.text + ".worldmap";
+        string filePath = Path.Combine(rootPath, filenameWorlMap);
+
+        var file = File.Open(filePath, FileMode.Create);
+        var writer = new BinaryWriter(file);
+        writer.Write(data.ToArray());
+        writer.Close();
+        data.Dispose();
+        worldMap.Dispose();
+        Log($"ARWorldMap written to ${filePath}");
+
+        SetText(infosText, "Success: File written to " + Path.Combine(rootPath, filenameJson));
     }
 
     private IEnumerator Load()
     {
+        yield return null;
 
-        var sessionSubsystem = (ARKitSessionSubsystem)arSession.subsystem;
+        ARKitSessionSubsystem sessionSubsystem = (ARKitSessionSubsystem)arSession.subsystem;
 
         if (sessionSubsystem == null)
         {
@@ -136,14 +189,17 @@ public class ARWorldMapController : MonoBehaviour
             yield break;
         }
 
-        var file = File.Open(path, FileMode.Open);
+        string filenameWorlMap = "ARWorldMap - " + inputFieldMapPrefabName.text + ".worldmap";
+        string filePath = Path.Combine(rootPath, filenameWorlMap);
+
+        var file = File.Open(filePath, FileMode.Open);
         if (file == null)
         {
-            Log($"File ${path} doesn't exist");
+            Log($"File ${filePath} doesn't exist");
             yield break;
         }
 
-        Log($"Reading ${path}");
+        Log($"Reading ${filePath}");
 
         int bytesPerFrame = 1024 * 10;
         long bytesRemaining = file.Length;
@@ -181,20 +237,25 @@ public class ARWorldMapController : MonoBehaviour
         sessionSubsystem.ApplyWorldMap(aRWorldMap);
 
 
-        string jsonContent = File.ReadAllText(Path.Combine(Application.persistentDataPath, "WorldMapObjectsData.json"));
+        string filenameJson = "ARModels - " + inputFieldMapPrefabName.text + ".json";
+        string jsonContent = File.ReadAllText(Path.Combine(rootPath, filenameJson));
         List<WorldMapObject> worldMapObjects = JsonConvert.DeserializeObject<List<WorldMapObject>>(jsonContent);
 
         foreach (WorldMapObject wMapObject in worldMapObjects)
         {
-            Debug.Log("Found " + wMapObject.prefabName + " in world objects data");
+
             Log("Found " + wMapObject.prefabName + " in world objects data");
+
+            GameObject arModelSpawned = Instantiate(arModelToSpawn, new Vector3(wMapObject.localPositionX, wMapObject.localPositionY, wMapObject.localPositionZ), new Quaternion(wMapObject.localRotationX, wMapObject.localRotationY, wMapObject.localRotationZ, wMapObject.localRotationW));
+
+            arModelSpawned.transform.localScale = new Vector3(wMapObject.localScaleX, wMapObject.localScaleY, wMapObject.localScaleZ);
         }
     }
 
     public void Log(string text)
     {
         Debug.Log(text);
-        messages.Add(text);
+        logs.Add(text);
 
     }
 
@@ -216,16 +277,12 @@ public class ARWorldMapController : MonoBehaviour
 
     private void Update()
     {
-        SetActive(errorText.gameObject, !supported);
+        SetActive(infosText.gameObject, supported);
         SetActive(saveButton.gameObject, supported);
         SetActive(loadButton.gameObject, supported);
         SetActive(mappingStatusText.gameObject, supported);
 
-#if UNITY_IOS
         var sessionSubsystem = (ARKitSessionSubsystem)arSession.subsystem;
-#else
-        XRSessionSubsystem sessionSubsystem = null;
-#endif
 
         if (sessionSubsystem == null)
         {
@@ -235,44 +292,38 @@ public class ARWorldMapController : MonoBehaviour
         var numLogsToShow = 20;
         string msg = "";
 
-        for (int i = Mathf.Max(0, messages.Count - numLogsToShow); i < messages.Count; ++i)
+        for (int i = Mathf.Max(0, logs.Count - numLogsToShow); i < logs.Count; ++i)
         {
-            msg += messages[i];
+            msg += logs[i];
             msg += "\n";
         }
         SetText(logText, msg);
 
-#if UNITY_IOS
         SetText(mappingStatusText, string.Format("Mapping Status: {0}", sessionSubsystem.worldMappingStatus));
-#endif
     }
 
 
-    private void SaveAndDisposeWorldMap(ARWorldMap worldMap)
-    {
-        Log("Serializing ARWOrldMap to byte Array");
-        var data = worldMap.Serialize(Allocator.Temp);
 
-        Log($"ARWorldMap has ${data.Length} bytes");
-
-        var file = File.Open(path, FileMode.Create);
-        var writer = new BinaryWriter(file);
-        writer.Write(data.ToArray());
-        writer.Close();
-        data.Dispose();
-        worldMap.Dispose();
-        Log($"ARWorldMap written to ${path}");
-    }
 
 }
 
-[System.Serializable]
+[Serializable]
 public class WorldMapObject
 {
     public string prefabName;
-    public Vector3 position;
-    public Quaternion rotation;
-    public Vector3 scale;
+
+    public float localPositionX;
+    public float localPositionY;
+    public float localPositionZ;
+
+    public float localRotationX;
+    public float localRotationY;
+    public float localRotationZ;
+    public float localRotationW;
+
+    public float localScaleX;
+    public float localScaleY;
+    public float localScaleZ;
 }
 
 

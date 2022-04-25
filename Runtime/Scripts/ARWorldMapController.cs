@@ -4,24 +4,25 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Newtonsoft.Json;
+using TMPro;
 using Unity.Collections;
-using Unity.Plastic.Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARKit;
 using UnityEngine.XR.ARSubsystems;
 
-public class WorldMapController : MonoBehaviour
+public class ARWorldMapController : MonoBehaviour
 {
 
 
 
 
     public ARSession arSession;
-    public Text errorText;
-    public Text logText;
-    public Text mappingStatusText;
+    public TextMeshProUGUI errorText;
+    public TextMeshProUGUI logText;
+    public TextMeshProUGUI mappingStatusText;
     public Button saveButton;
     public Button loadButton;
 
@@ -44,7 +45,7 @@ public class WorldMapController : MonoBehaviour
     private void Awake()
     {
         messages = new List<string>();
-        path = Path.Combine(Application.persistentDataPath, "my_session.worldmap");
+        path = Path.Combine(Application.persistentDataPath, "ARWorldMap.worldmap");
     }
 
 
@@ -96,22 +97,27 @@ public class WorldMapController : MonoBehaviour
         }
 
 
-        GameObject[] worldObjects = GameObject.FindGameObjectsWithTag("WorldObject");
+        GameObject[] worldMapObjects = GameObject.FindGameObjectsWithTag("WorldMapObject");
 
-        List<WorldObject> wObjects = new List<WorldObject>();
-        foreach (GameObject worldObject in worldObjects)
+        List<WorldMapObject> wObjects = new List<WorldMapObject>();
+        foreach (GameObject worldMapObject in worldMapObjects)
         {
-            WorldObject savedObject = new WorldObject();
-            savedObject.prefabName = worldObject.name;
-            savedObject.position = worldObject.transform.position;
-            savedObject.rotation = worldObject.transform.rotation;
-            savedObject.scale = worldObject.transform.localScale;
+            WorldMapObject savedObject = new WorldMapObject();
+            savedObject.prefabName = worldMapObject.name;
+            savedObject.position = worldMapObject.transform.position;
+            savedObject.rotation = worldMapObject.transform.rotation;
+            savedObject.scale = worldMapObject.transform.localScale;
+
+            Debug.Log(savedObject.prefabName + " - " + savedObject.position + " - " + savedObject.rotation + " - " + savedObject.scale);
 
             wObjects.Add(savedObject);
         }
 
         string jsonStr = JsonUtility.ToJson(wObjects);
-        File.WriteAllText(Path.Combine(Application.persistentDataPath, "WorldObjectsData.json"), jsonStr);
+
+        Debug.Log(jsonStr);
+
+        File.WriteAllText(Path.Combine(Application.persistentDataPath, "WorldMapObjectsData.json"), jsonStr);
 
         var worldMap = request.GetWorldMap();
         request.Dispose();
@@ -175,13 +181,13 @@ public class WorldMapController : MonoBehaviour
         sessionSubsystem.ApplyWorldMap(aRWorldMap);
 
 
-        string jsonContent = File.ReadAllText(Path.Combine(Application.persistentDataPath, "WorldObjectsData.json"));
-        List<WorldObject> worldObjects = JsonConvert.DeserializeObject<List<WorldObject>>(jsonContent);
+        string jsonContent = File.ReadAllText(Path.Combine(Application.persistentDataPath, "WorldMapObjectsData.json"));
+        List<WorldMapObject> worldMapObjects = JsonConvert.DeserializeObject<List<WorldMapObject>>(jsonContent);
 
-        foreach (WorldObject wObject in worldObjects)
+        foreach (WorldMapObject wMapObject in worldMapObjects)
         {
-            Debug.Log("Found " + wObject.prefabName + " in world objects data");
-            Log("Found " + wObject.prefabName + " in world objects data");
+            Debug.Log("Found " + wMapObject.prefabName + " in world objects data");
+            Log("Found " + wMapObject.prefabName + " in world objects data");
         }
     }
 
@@ -200,7 +206,7 @@ public class WorldMapController : MonoBehaviour
         }
     }
 
-    static void SetText(Text text, string value)
+    static void SetText(TextMeshProUGUI text, string value)
     {
         if (text != null)
         {
@@ -261,7 +267,7 @@ public class WorldMapController : MonoBehaviour
 }
 
 [System.Serializable]
-public class WorldObject
+public class WorldMapObject
 {
     public string prefabName;
     public Vector3 position;

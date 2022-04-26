@@ -4,9 +4,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using Newtonsoft.Json;
 using TMPro;
 using Unity.Collections;
+using Unity.Plastic.Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.XR.ARFoundation;
@@ -17,6 +17,9 @@ public class ARWorldMapController : MonoBehaviour
 {
 
     public ARSession arSession;
+
+    [SerializeField] private ARController arController;
+
     public TextMeshProUGUI infosText;
     public TextMeshProUGUI logText;
     public TextMeshProUGUI mappingStatusText;

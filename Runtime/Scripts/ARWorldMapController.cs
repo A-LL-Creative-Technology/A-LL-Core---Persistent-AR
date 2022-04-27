@@ -4,54 +4,46 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using TMPro;
 using Unity.Collections;
 using Newtonsoft.Json;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARKit;
 using UnityEngine.XR.ARSubsystems;
+using System.Runtime.ExceptionServices;
 
 public class ARWorldMapController : MonoBehaviour
 {
 
+    private static ARWorldMapController instance;
+
+    public static ARWorldMapController GetInstance()
+    {
+        return instance;
+    }
+
+    public static event EventHandler OnARWorldmapLoaded;
+    public static event EventHandler OnARWorldmapRelocalized;
+
     public ARSession arSession;
-
-    [SerializeField] private ARController arController;
-    [SerializeField] private ARPlaneController arPlaneController;
-
-
-    public TextMeshProUGUI infosText;
-    public TextMeshProUGUI logText;
-    public TextMeshProUGUI mappingStatusText;
-    public TMP_InputField inputFieldMapPrefabName;
-    public Button saveButton;
-    public Button loadButton;
-    public Toggle overwriteFile;
-
-
-    [SerializeField] private GameObject arModelToSpawn;
 
     private ARKitSessionSubsystem arSessionSubsystem;
     private ARWorldMap aRWorldMap;
 
-    private List<string> logs;
+    [HideInInspector] public List<string> logs;
 
     private string rootPath;
 
     private string arModelTag = "WorldMapARModel";
 
-    bool supported
-    {
-        get
-        {
-            return arSession.subsystem is ARKitSessionSubsystem && ARKitSessionSubsystem.worldMapSupported;
-        }
-    }
+    public ARWorldMappingStatus arWorldmapMappingStatus;
+
+    private IEnumerator tryToRelocalizeWorlmapCoroutine;
 
     private void Awake()
     {
+        instance = this;
+
         logs = new List<string>();
 
         rootPath = Path.Combine(Application.persistentDataPath, "AR Worldmaps");
@@ -63,64 +55,14 @@ public class ARWorldMapController : MonoBehaviour
 
     private void Update()
     {
-        SetActive(infosText.gameObject, supported);
-        SetActive(saveButton.gameObject, supported);
-        SetActive(loadButton.gameObject, supported);
-        SetActive(mappingStatusText.gameObject, supported);
-
-        if (arSessionSubsystem == null)
-        {
-            return;
-        }
-
-        var numLogsToShow = 20;
-        string msg = "";
-
-        for (int i = Mathf.Max(0, logs.Count - numLogsToShow); i < logs.Count; ++i)
-        {
-            msg += logs[i];
-            msg += "\n";
-        }
-        SetText(logText, msg);
-
-        SetText(mappingStatusText, string.Format("Mapping Status: {0}", arSessionSubsystem.worldMappingStatus));
+        arWorldmapMappingStatus = arSessionSubsystem.worldMappingStatus;
     }
 
-    public void OnSaveButtonPressed()
+
+
+    public IEnumerator SaveARWorldmap(string arWorldmapName)
     {
-        StartCoroutine(Save());
-    }
-
-    public void OnLoadButtonPressed()
-    {
-        StartCoroutine(Load());
-    }
-
-    public void OnResetButtonPressed()
-    {
-        arController.ResetAR();
-
-        // remove all spawned models
-        arPlaneController.DestroySpawnedARModels();
-    }
-
-    private IEnumerator Save()
-    {
-        if (inputFieldMapPrefabName.text == "")
-        {
-            SetText(infosText, "Error: Map and Prefab filename is empty.");
-
-            yield break;
-        }
-
-        string filenameJson = "ARModels - " + inputFieldMapPrefabName.text + ".json";
-
-        if (!overwriteFile.isOn && File.Exists(Path.Combine(rootPath, filenameJson)))
-        {
-            SetText(infosText, "Error: Map and Prefab filename already exists.");
-
-            yield break;
-        }
+        Log("Saving AR Worldmap");
 
         if (arSessionSubsystem == null)
         {
@@ -146,7 +88,7 @@ public class ARWorldMapController : MonoBehaviour
 
         if (worldMapObjects.Length == 0)
         {
-            SetText(infosText, "Error: Cannot find AR Model with tag '" + arModelTag + "'.");
+            Log("Error: Cannot find AR Model with tag '" + arModelTag + "'.");
 
             yield break;
         }
@@ -178,7 +120,7 @@ public class ARWorldMapController : MonoBehaviour
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore
         });
 
-
+        string filenameJson = GetJsonARWorldmapFilename(arWorldmapName); ;
 
         File.WriteAllText(Path.Combine(rootPath, filenameJson), jsonStr);
 
@@ -187,12 +129,12 @@ public class ARWorldMapController : MonoBehaviour
         request.Dispose();
 
         // Save the Worldmap
-        Log("Serializing ARWOrldMap to byte Array");
+        Log("Serializing ARWorldMap to byte Array");
         var data = worldMap.Serialize(Allocator.Temp);
 
         Log($"ARWorldMap has ${data.Length} bytes");
 
-        string filenameWorlMap = "ARWorldMap - " + inputFieldMapPrefabName.text + ".worldmap";
+        string filenameWorlMap = GetARWorldmapFilename(arWorldmapName);
         string filePath = Path.Combine(rootPath, filenameWorlMap);
 
         var file = File.Open(filePath, FileMode.Create);
@@ -201,20 +143,21 @@ public class ARWorldMapController : MonoBehaviour
         writer.Close();
         data.Dispose();
         worldMap.Dispose();
-        Log($"ARWorldMap written to ${filePath}");
 
-        SetText(infosText, "Success: File written to " + Path.Combine(rootPath, filenameJson));
+        Log($"ARWorldMap saved to ${filePath}");
     }
 
-    private IEnumerator Load()
+    public IEnumerator LoadARWorldmap(string arWorldmapName)
     {
+        Log("Loading AR Worldmap");
+
         if (arSessionSubsystem == null)
         {
             Log("No session subsystem available. Could not load");
             yield break;
         }
 
-        string filenameWorlMap = "ARWorldMap - " + inputFieldMapPrefabName.text + ".worldmap";
+        string filenameWorlMap = GetARWorldmapFilename(arWorldmapName);
         string filePath = Path.Combine(rootPath, filenameWorlMap);
 
         var file = File.Open(filePath, FileMode.Open);
@@ -223,8 +166,6 @@ public class ARWorldMapController : MonoBehaviour
             Log($"File ${filePath} doesn't exist");
             yield break;
         }
-
-        Log($"Reading ${filePath}");
 
         int bytesPerFrame = 1024 * 10;
         long bytesRemaining = file.Length;
@@ -241,8 +182,6 @@ public class ARWorldMapController : MonoBehaviour
         var data = new NativeArray<byte>(allBytes.Count, Allocator.Temp);
         data.CopyFrom(allBytes.ToArray());
 
-        Log("Deserializing to ARWorldMap");
-
         if (ARWorldMap.TryDeserialize(data, out aRWorldMap))
         {
             data.Dispose();
@@ -258,29 +197,62 @@ public class ARWorldMapController : MonoBehaviour
             yield break;
         }
 
-        // apply straight away the ARWorldmap
-        ApplyARWorldmap();
-
-        // Load AR Models from JSON
-        string filenameJson = "ARModels - " + inputFieldMapPrefabName.text + ".json";
-        string jsonContent = File.ReadAllText(Path.Combine(rootPath, filenameJson));
-        List<WorldMapObject> worldMapObjects = JsonConvert.DeserializeObject<List<WorldMapObject>>(jsonContent);
-
-        foreach (WorldMapObject wMapObject in worldMapObjects)
+        // fires the event to notify that ARWorldmap has been loaded
+        if (OnARWorldmapLoaded != null)
         {
-
-            Log("Found " + wMapObject.prefabName + " in world objects data");
-
-            GameObject arModelSpawned = Instantiate(arModelToSpawn, new Vector3(wMapObject.localPositionX, wMapObject.localPositionY, wMapObject.localPositionZ), new Quaternion(wMapObject.localRotationX, wMapObject.localRotationY, wMapObject.localRotationZ, wMapObject.localRotationW));
-
-            arModelSpawned.transform.localScale = new Vector3(wMapObject.localScaleX, wMapObject.localScaleY, wMapObject.localScaleZ);
+            OnARWorldmapLoaded(this, EventArgs.Empty);
         }
     }
 
-    public void ApplyARWorldmap()
+    public void ApplyLoadedARWorldmap()
     {
-        Log("Apply worldmap to current session");
+        // first kill any coroutine stuck in trying to relocalize
+        if (tryToRelocalizeWorlmapCoroutine != null)
+        {
+            Log("Killing existing running relocalization coroutine");
+
+            StopCoroutine(tryToRelocalizeWorlmapCoroutine);
+        }
+
+
         arSessionSubsystem.ApplyWorldMap(aRWorldMap);
+
+        tryToRelocalizeWorlmapCoroutine = TryToRelocalizedWorldmap();
+
+        Log("Applied worldmap to current session");
+
+        StartCoroutine(tryToRelocalizeWorlmapCoroutine);
+
+    }
+
+    private IEnumerator TryToRelocalizedWorldmap()
+    {
+        // before checking for mapped status, we make sure it goes through not available (successfull reset of arsessionorigin)
+        while (arWorldmapMappingStatus != ARWorldMappingStatus.NotAvailable)
+            yield return null;
+
+        while (arWorldmapMappingStatus != ARWorldMappingStatus.Mapped)
+            yield return null;
+
+        // fires the event 
+        if (OnARWorldmapRelocalized != null)
+        {
+            OnARWorldmapRelocalized(this, EventArgs.Empty);
+        }
+
+        tryToRelocalizeWorlmapCoroutine = null;
+
+        Log("AR worldmap relocalized");
+    }
+
+    public string GetARWorldmapFilename(string arWorldmapName)
+    {
+        return "ARWorldMap - " + arWorldmapName + ".worldmap";
+    }
+
+    public string GetJsonARWorldmapFilename(string arWorldmapName)
+    {
+        return "ARModels - " + arWorldmapName + ".json";
     }
 
     public void Log(string text)
@@ -289,25 +261,6 @@ public class ARWorldMapController : MonoBehaviour
         logs.Add(text);
 
     }
-
-    static void SetActive(GameObject go, bool active)
-    {
-        if (go != null)
-        {
-            go.gameObject.SetActive(active);
-        }
-    }
-
-    static void SetText(TextMeshProUGUI text, string value)
-    {
-        if (text != null)
-        {
-            text.text = value;
-        }
-    }
-
-
-
 
 
 }

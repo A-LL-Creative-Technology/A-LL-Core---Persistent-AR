@@ -5,12 +5,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Unity.Collections;
-using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARKit;
 using UnityEngine.XR.ARSubsystems;
 using System.Runtime.ExceptionServices;
+using Unity.Plastic.Newtonsoft.Json;
 
 public class ARWorldMapController : MonoBehaviour
 {
@@ -22,6 +22,7 @@ public class ARWorldMapController : MonoBehaviour
         return instance;
     }
 
+    public static event EventHandler OnARWorldmapSaved;
     public static event EventHandler OnARWorldmapLoaded;
     public static event EventHandler OnARWorldmapRelocalized;
 
@@ -32,13 +33,16 @@ public class ARWorldMapController : MonoBehaviour
 
     [HideInInspector] public List<string> logs;
 
-    private string rootPath;
+    [HideInInspector] public string rootPath;
 
     private string arModelTag = "WorldMapARModel";
 
-    public ARWorldMappingStatus arWorldmapMappingStatus;
+    [HideInInspector] public ARWorldMappingStatus arWorldmapMappingStatus;
 
     private IEnumerator tryToRelocalizeWorlmapCoroutine;
+
+    private bool isLoadingARWorldmap = false;
+    private bool isSavingARWorldmap = false;
 
     private void Awake()
     {
@@ -63,6 +67,11 @@ public class ARWorldMapController : MonoBehaviour
     public IEnumerator SaveARWorldmap(string arWorldmapName)
     {
         Log("Saving AR Worldmap");
+
+        if (isSavingARWorldmap)
+            yield break;
+
+        isSavingARWorldmap = true;
 
         if (arSessionSubsystem == null)
         {
@@ -145,11 +154,24 @@ public class ARWorldMapController : MonoBehaviour
         worldMap.Dispose();
 
         Log($"ARWorldMap saved to ${filePath}");
+
+        // fires the event to notify that ARWorldmap has been loaded
+        if (OnARWorldmapSaved != null)
+        {
+            OnARWorldmapSaved(this, EventArgs.Empty);
+        }
+
+        isSavingARWorldmap = false;
     }
 
     public IEnumerator LoadARWorldmap(string arWorldmapName)
     {
         Log("Loading AR Worldmap");
+
+        if (isLoadingARWorldmap)
+            yield break;
+
+        isLoadingARWorldmap = true;
 
         if (arSessionSubsystem == null)
         {
@@ -197,11 +219,15 @@ public class ARWorldMapController : MonoBehaviour
             yield break;
         }
 
+
         // fires the event to notify that ARWorldmap has been loaded
         if (OnARWorldmapLoaded != null)
         {
             OnARWorldmapLoaded(this, EventArgs.Empty);
         }
+
+        isLoadingARWorldmap = false;
+
     }
 
     public void ApplyLoadedARWorldmap()

@@ -5,12 +5,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Unity.Collections;
+using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARKit;
 using UnityEngine.XR.ARSubsystems;
 using System.Runtime.ExceptionServices;
-using Unity.Plastic.Newtonsoft.Json;
 
 public class ARWorldMapController : MonoBehaviour
 {
@@ -230,7 +230,7 @@ public class ARWorldMapController : MonoBehaviour
 
     }
 
-    public void ApplyLoadedARWorldmap()
+    public void RelocalizeLoadedARWorldmap()
     {
         // first kill any coroutine stuck in trying to relocalize
         if (tryToRelocalizeWorlmapCoroutine != null)

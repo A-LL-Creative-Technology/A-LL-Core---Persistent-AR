@@ -474,7 +474,8 @@ public class MapObjectsManager : MonoBehaviour
     public void InstantiatePrefabOnAnchor(GameObject anchorMarker, string prefabName, SerializableVector3 position, SerializableQuaternion rotation, SerializableVector3 scale)
     {
         Debug.Log("In InstantiatePrefabOnAnchor");
-        var obj = Instantiate(availableGameobjectsList.Find(x => x.name == prefabName), anchorMarker.transform); // TODO remove parent?
+        var obj = Instantiate(Resources.Load<GameObject>("Persistent/" + prefabName), anchorMarker.transform); // TODO remove parent?
+        // var obj = Instantiate(availableGameobjectsList.Find(x => x.name == prefabName), anchorMarker.transform); // TODO remove parent?
         obj.transform.localPosition = position;
         obj.transform.localRotation = rotation;
         obj.transform.localScale = scale;

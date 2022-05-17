@@ -4,9 +4,12 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using Lofelt.NiceVibrations;
+using System;
 
 public class MapObjectsManager : MonoBehaviour
 {
+    public static event EventHandler OnAnchorRelocalized; // event that fires when the anchor has been successfully relocalized
+
     public List<GameObject> availableGameobjectsList;
     //public TextMeshProUGUI infoText;
     //public TMP_Dropdown dropdown; // Dropdown of all available AR objects that can be placed
@@ -472,6 +475,7 @@ public class MapObjectsManager : MonoBehaviour
         placementDist = value;
     }
 
+    // we recognized the anchor
     public void InstantiatePrefabOnAnchor(GameObject anchorMarker, string prefabName, SerializableVector3 position, SerializableQuaternion rotation, SerializableVector3 scale)
     {
         Debug.Log("In InstantiatePrefabOnAnchor");
@@ -490,6 +494,12 @@ public class MapObjectsManager : MonoBehaviour
         }
 
         //dictAnchorGameObjectList[anchorMarker].Add(new GameObjectWithPrefabName(prefabName, obj));
+
+        // fires the event 
+        if (OnAnchorRelocalized != null)
+        {
+            OnAnchorRelocalized(this, EventArgs.Empty);
+        }
     }
 
     private void changeSceneMode(SceneManagementMode newMode)

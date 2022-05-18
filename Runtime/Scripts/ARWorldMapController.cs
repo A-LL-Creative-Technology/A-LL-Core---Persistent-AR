@@ -9,8 +9,7 @@ using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARKit;
 using UnityEngine.XR.ARSubsystems;
-using System.Runtime.ExceptionServices;
-using Unity.Plastic.Newtonsoft.Json;
+using Newtonsoft.Json;
 
 public class ARWorldMapController : MonoBehaviour
 {

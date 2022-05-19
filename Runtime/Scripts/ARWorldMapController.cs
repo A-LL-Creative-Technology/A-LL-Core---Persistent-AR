@@ -1,4 +1,4 @@
-//#if UNITY_IOS
+#if UNITY_IOS
 
 using System;
 using System.Collections;
@@ -312,4 +312,4 @@ public class WorldMapObject
 
 
 
-//#endif
+#endif

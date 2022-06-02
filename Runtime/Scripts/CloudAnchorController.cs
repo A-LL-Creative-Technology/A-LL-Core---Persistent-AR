@@ -851,6 +851,9 @@ public class CloudAnchorController : MonoBehaviour
     // Remove all cloud anchors of the current map
     public void RemoveAllCloudAnchors()
     {
+        if (arAnchorsList == null || arAnchorsHosted == null)
+            return;
+
         foreach (var anchor in arAnchorsList)
         {
             Destroy(anchor.gameObject);

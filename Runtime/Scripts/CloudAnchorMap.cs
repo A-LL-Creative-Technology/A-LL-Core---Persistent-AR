@@ -88,8 +88,9 @@ public struct MapObject
     public SerializableVector3 position;
     public SerializableQuaternion rotation;
     public SerializableVector3 scale;
+    public List<ARAsset> assets;
 
-    public MapObject(string prefabName, GameObject mapObject)
+    public MapObject(string prefabName, GameObject mapObject, List<ARAsset> assets = null)
     {
         this.prefabName = prefabName;
 
@@ -101,6 +102,8 @@ public struct MapObject
 
         var mapScale = mapObject.transform.localScale;
         this.scale = new SerializableVector3(mapScale.x, mapScale.y, mapScale.z);
+
+        this.assets = assets;
     }
 
     // Return the json string
@@ -109,6 +112,20 @@ public struct MapObject
         return JsonUtility.ToJson(this);
     }
 }
+
+[Serializable]
+public struct ARAsset
+{
+    public string uri;
+    public int version;
+
+    public ARAsset(string uri, int version)
+    {
+        this.uri = uri;
+        this.version = version;
+    }
+}
+
 
 [Serializable]
 public struct SerializableVector3

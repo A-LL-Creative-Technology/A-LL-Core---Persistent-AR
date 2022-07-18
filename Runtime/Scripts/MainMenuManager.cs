@@ -28,13 +28,13 @@ public class MainMenuManager : MonoBehaviour
         
     }
 
-    public void FetchMaps(Action<CloudAnchorMapCollection> callback)
+    public void FetchMaps(Action<CloudAnchorMapCollection> callback, Action errorCallback = null)
     {
         // Ask the server for the maps stored
         Controller.FetchCloudAnchorMapCollection((CloudAnchorMapCollection map) =>
         {
             callback.Invoke(map);
-        });
+        }, errorCallback);
     }
 
     // Load the map without the AR objects (used for anchors editing)

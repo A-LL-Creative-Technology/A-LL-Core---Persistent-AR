@@ -32,7 +32,7 @@ public class APIRequestsManager : MonoBehaviour
     }
 
     // Get the list of all maps
-    public void GetAllMaps(System.Action<CloudAnchorMapCollection> callback)
+    public void GetAllMaps(System.Action<CloudAnchorMapCollection> callback, System.Action errorCallback = null)
     {
 #if USE_ALL_CORE_UTILS
         if(apiController == null)
@@ -54,7 +54,9 @@ public class APIRequestsManager : MonoBehaviour
             }
             
             callback?.Invoke(mapCollection);
-        }, null, null, null, false);
+        }, (Proyecto26.RequestException obj) => {
+            errorCallback?.Invoke();
+        }, null, null, false);
 #else
         Debug.LogError("APIController missing, please install A-LL Core Utils to use this functionnality !");
 #endif

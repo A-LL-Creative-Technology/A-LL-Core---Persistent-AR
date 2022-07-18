@@ -894,7 +894,7 @@ public class CloudAnchorController : MonoBehaviour
         //Debug.Log("XRSessionSubsystem NotTrackingReason: " + m_ARSession.subsystem.notTrackingReason.ToString());
     }
 
-    public void FetchCloudAnchorMapCollection(System.Action<CloudAnchorMapCollection> callback)
+    public void FetchCloudAnchorMapCollection(System.Action<CloudAnchorMapCollection> callback, System.Action errorCallback = null)
     {
         if (onlineMode)
         {
@@ -904,7 +904,7 @@ public class CloudAnchorController : MonoBehaviour
                 // mapCollection = CleanLoadedCloudAnchorMapCollection(mapCollection); // Bug: will block Invoke (no error appears...)
                 callback.Invoke(mapCollection);
                 //callback?.Invoke(CleanLoadedCloudAnchorMapCollection(mapCollection));
-            });
+            }, errorCallback);
         }
         else
         {

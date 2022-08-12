@@ -91,7 +91,7 @@ public class ARWorldMapController : MonoBehaviour
             yield break;
         }
 
-        // Look for AR Models with the tag "WorldMapObject"
+        // Look for AR Models with the tag from variable arModelTag
         GameObject[] worldMapObjects = GameObject.FindGameObjectsWithTag(arModelTag);
 
         if (worldMapObjects.Length == 0)

@@ -12,7 +12,7 @@ To use this package in a unity project :
     3. ARKit XR Plugin
     4. ARCore Extensions by following this link (https://developers.google.com/ar/develop/unity-arf/getting-started-extensions)
         - Import samples in the description of the package in the Package Manager
-        - Add an assembly reference in Samples/ARCore Extensions/1.30.0/Persistent Cloud Anchor Sample/Scripts named "ARCore Extensions" and like it to "AR Core - Persistent AR"
+        - Add an assembly reference in Samples/ARCore Extensions/1.30.0/Persistent Cloud Anchor Sample/Scripts named "ARCore Extensions" and link it to "AR Core - Persistent AR"
     5. Add Nice Vibrations by Lofelt 
 4. Update project settings as follows :
     1. XR Plug-in Management

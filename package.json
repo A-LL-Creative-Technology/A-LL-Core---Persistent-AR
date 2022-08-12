@@ -1,6 +1,6 @@
 {
   "name": "com.all.core.ar.persistent",
-  "version": "0.0.1",
+  "version": "1.0.1",
   "displayName": "A-LL Core - Persistent AR",
   "description": "This is the Persistent Augmented Reality core package of A-LL Creative Technology mobile Unity Framework",
   "unity": "2019.1",

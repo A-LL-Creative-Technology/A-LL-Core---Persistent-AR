@@ -208,6 +208,8 @@ public class ARWorldMapController : MonoBehaviour
             data.Dispose();
         }
 
+        file.Close();
+
         if (aRWorldMap.valid)
         {
             Log("Worldmap loaded successfully");

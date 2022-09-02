@@ -142,8 +142,7 @@ public class ARWorldMapController : MonoBehaviour
 
         Log($"ARWorldMap has ${data.Length} bytes");
 
-        string filenameWorlMap = GetARWorldmapFilename(arWorldmapName);
-        string filePath = Path.Combine(rootPath, filenameWorlMap);
+        string filePath = GetARWorldmapFilePath(arWorldmapName);
 
         var file = File.Open(filePath, FileMode.Create);
         var writer = new BinaryWriter(file);
@@ -178,9 +177,8 @@ public class ARWorldMapController : MonoBehaviour
             yield break;
         }
 
-        string filenameWorlMap = GetARWorldmapFilename(arWorldmapName);
-        string filePath = Path.Combine(rootPath, filenameWorlMap);
-
+        string filePath = GetARWorldmapFilePath(arWorldmapName);
+        
         var file = File.Open(filePath, FileMode.Open);
         if (file == null)
         {
@@ -272,9 +270,9 @@ public class ARWorldMapController : MonoBehaviour
         Log("AR worldmap relocalized");
     }
 
-    public string GetARWorldmapFilename(string arWorldmapName)
+    public string GetARWorldmapFilePath(string arWorldmapName)
     {
-        return "ARWorldMap - " + arWorldmapName + ".worldmap";
+        return Path.Combine(rootPath, "ARWorldMap - " + arWorldmapName + ".worldmap");
     }
 
     public string GetJsonARWorldmapFilename(string arWorldmapName)

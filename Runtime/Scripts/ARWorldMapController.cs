@@ -24,6 +24,7 @@ public class ARWorldMapController : MonoBehaviour
     public static event EventHandler OnARWorldmapSaved;
     public static event EventHandler OnARWorldmapLoaded;
     public static event EventHandler OnARWorldmapRelocalized;
+    public static event EventHandler OnARWorldmapRelocalizationAborted;
 
     public ARSession arSession;
 
@@ -42,6 +43,8 @@ public class ARWorldMapController : MonoBehaviour
 
     private bool isLoadingARWorldmap = false;
     private bool isSavingARWorldmap = false;
+    private bool shouldAbordRelocalization = false;
+    private bool isTryingToRelocalize = false;
 
     private void Awake()
     {
@@ -66,6 +69,9 @@ public class ARWorldMapController : MonoBehaviour
     public IEnumerator SaveARWorldmap(string arWorldmapName)
     {
         Log("Saving AR Worldmap");
+
+        // abort relocalization
+        AbortRelocalization();
 
         if (isSavingARWorldmap)
             yield break;
@@ -178,7 +184,7 @@ public class ARWorldMapController : MonoBehaviour
         }
 
         string filePath = GetARWorldmapFilePath(arWorldmapName);
-        
+
         var file = File.Open(filePath, FileMode.Open);
         if (file == null)
         {
@@ -252,12 +258,35 @@ public class ARWorldMapController : MonoBehaviour
 
     private IEnumerator TryToRelocalizedWorldmap()
     {
+        isTryingToRelocalize = true;
+
         // before checking for mapped status, we make sure it goes through not available (successfull reset of arsessionorigin)
-        while (arWorldmapMappingStatus != ARWorldMappingStatus.NotAvailable)
+        while (arWorldmapMappingStatus != ARWorldMappingStatus.NotAvailable && !shouldAbordRelocalization)
             yield return null;
 
-        while (arWorldmapMappingStatus != ARWorldMappingStatus.Mapped)
+        while (arWorldmapMappingStatus != ARWorldMappingStatus.Mapped && !shouldAbordRelocalization)
             yield return null;
+
+        if (shouldAbordRelocalization)
+        {
+            shouldAbordRelocalization = false;
+
+            if (OnARWorldmapRelocalizationAborted != null)
+            {
+                OnARWorldmapRelocalizationAborted(this, EventArgs.Empty);
+            }
+
+            tryToRelocalizeWorlmapCoroutine = null;
+            isTryingToRelocalize = false;
+
+
+            Log("AR worldmap relocalization aborted");
+
+            yield break;
+        }
+
+        tryToRelocalizeWorlmapCoroutine = null;
+        isTryingToRelocalize = false;
 
         // fires the event 
         if (OnARWorldmapRelocalized != null)
@@ -265,9 +294,13 @@ public class ARWorldMapController : MonoBehaviour
             OnARWorldmapRelocalized(this, EventArgs.Empty);
         }
 
-        tryToRelocalizeWorlmapCoroutine = null;
-
         Log("AR worldmap relocalized");
+    }
+
+    public void AbortRelocalization()
+    {
+        if (isTryingToRelocalize)
+            shouldAbordRelocalization = true;
     }
 
     public string GetARWorldmapFilePath(string arWorldmapName)

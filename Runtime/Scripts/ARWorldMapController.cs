@@ -113,14 +113,14 @@ public class ARWorldMapController : MonoBehaviour
             WorldMapObject savedObject = new WorldMapObject();
             savedObject.prefabName = worldMapObject.name;
 
-            savedObject.localPositionX = worldMapObject.transform.localPosition.x;
-            savedObject.localPositionY = worldMapObject.transform.localPosition.y;
-            savedObject.localPositionZ = worldMapObject.transform.localPosition.z;
+            savedObject.localPositionX = worldMapObject.transform.position.x;
+            savedObject.localPositionY = worldMapObject.transform.position.y;
+            savedObject.localPositionZ = worldMapObject.transform.position.z;
 
-            savedObject.localRotationX = worldMapObject.transform.localRotation.x;
-            savedObject.localRotationY = worldMapObject.transform.localRotation.y;
-            savedObject.localRotationZ = worldMapObject.transform.localRotation.z;
-            savedObject.localRotationW = worldMapObject.transform.localRotation.w;
+            savedObject.localRotationX = worldMapObject.transform.rotation.x;
+            savedObject.localRotationY = worldMapObject.transform.rotation.y;
+            savedObject.localRotationZ = worldMapObject.transform.rotation.z;
+            savedObject.localRotationW = worldMapObject.transform.rotation.w;
 
             savedObject.localScaleX = worldMapObject.transform.localScale.x;
             savedObject.localScaleY = worldMapObject.transform.localScale.y;
